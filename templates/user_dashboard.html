@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Attendance Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-info {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .attendance-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .attendance-buttons button {
+            flex: 1;
+            min-width: 150px;
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-present {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-absent {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-late {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-leave {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .time-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .alert {
+            margin-bottom: 1rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .spinner {
+            border: 4px solid var(--light-bg);
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="#" class="navbar-brand">AMS - Attendance System</a>
+                <ul class="navbar-menu">
+                    <li>Welcome, <strong>{{ current_user.username }}</strong></li>
+                    <li><a href="{{ url_for('logout') }}" class="logout-btn">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Section -->
+    <div class="dashboard-header">
+        <div class="container">
+            <h1 class="dashboard-title">Dashboard</h1>
+            <div class="user-info">
+                <p><strong>Employee ID:</strong> {{ current_user.employee_id }}</p>
+                <p><strong>Department:</strong> {{ current_user.department }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Alert Messages -->
+        <div id="alert-container"></div>
+
+        <!-- Today's Attendance Section -->
+        <div class="card">
+            <h2 class="card-title">Today's Attendance</h2>
+            
+            {% if attendance_today %}
+                <div style="text-align: center;">
+                    <p style="margin-bottom: 1rem;">
+                        <span class="status-badge status-{{ attendance_today.status.lower() }}">
+                            Status: {{ attendance_today.status.upper() }}
+                        </span>
+                    </p>
+                    <div class="time-display">
+                        Check-In: {{ attendance_today.check_in_time.strftime('%H:%M:%S') }}
+                    </div>
+                    {% if attendance_today.check_out_time %}
+                        <div class="time-display">
+                            Check-Out: {{ attendance_today.check_out_time.strftime('%H:%M:%S') }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p style="text-align: center; color: var(--text-light);">No attendance record for today</p>
+            {% endif %}
+
+            <div class="attendance-buttons">
+                <button id="check-in-btn" class="btn btn-success" onclick="checkIn()" {% if attendance_today and attendance_today.check_in_time %}disabled{% endif %}>
+                    Check In
+                </button>
+                <button id="check-out-btn" class="btn btn-warning" onclick="checkOut()" {% if not attendance_today or (attendance_today and attendance_today.check_out_time) %}disabled{% endif %}>
+                    Check Out
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing...</p>
+            </div>
+        </div>
+
+        <!-- Attendance History Section -->
+        <div class="card">
+            <h2 class="card-title">Attendance History (Last 30 Days)</h2>
+            
+            {% if attendance_records %}
+                <div style="overflow-x: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Check-In</th>
+                                <th>Check-Out</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                                <tr>
+                                    <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ record.check_in_time.strftime('%H:%M:%S') if record.check_in_time else '-' }}</td>
+                                    <td>{{ record.check_out_time.strftime('%H:%M:%S') if record.check_out_time else '-' }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ record.status.lower() }}">
+                                            {{ record.status.upper() }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: var(--text-light);">No attendance records available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        const CHECK_IN_URL = "{{ url_for('check_in') }}";
+        const CHECK_OUT_URL = "{{ url_for('check_out') }}";
+
+        function checkIn() {
+            const btn = document.getElementById('check-in-btn');
+            const loading = document.getElementById('loading');
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+
+            fetch(CHECK_IN_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text || 'Request failed'); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                loading.style.display = 'none';
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.error || 'Unknown error', 'error');
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                showAlert(error.message || 'An error occurred', 'error');
+                btn.disabled = false;
+            });
+        }
+
+        function checkOut() {
+            const btn = document.getElementById('check-out-btn');
+            const loading = document.getElementById('loading');
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+
+            fetch(CHECK_OUT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text || 'Request failed'); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                loading.style.display = 'none';
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.error || 'Unknown error', 'error');
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                showAlert(error.message || 'An error occurred', 'error');
+                btn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

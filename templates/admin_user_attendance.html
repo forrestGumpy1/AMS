@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Attendance - Attendance Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .user-info-box {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .user-info-box p {
+            margin: 0.5rem 0;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            background-color: var(--light-bg);
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-present {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-absent {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-late {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-leave {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="#" class="navbar-brand">AMS - Admin Panel</a>
+                <ul class="navbar-menu">
+                    <li><strong>Admin: {{ current_user.username }}</strong></li>
+                    <li><a href="{{ url_for('logout') }}" class="logout-btn">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">User Attendance Details</h1>
+            <p>View attendance records for {{ user.username }}</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <a href="{{ url_for('admin_users') }}" class="back-link">← Back to Users</a>
+
+        <!-- User Info Box -->
+        <div class="user-info-box">
+            <p><strong>Username:</strong> {{ user.username }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Employee ID:</strong> {{ user.employee_id }}</p>
+            <p><strong>Department:</strong> {{ user.department }}</p>
+            <p><strong>Joined:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-value">{{ records|length }}</div>
+                <div class="stat-label">Total Records</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ records|selectattr('status', 'equalto', 'present')|list|length }}</div>
+                <div class="stat-label">Present Days</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ records|selectattr('status', 'equalto', 'absent')|list|length }}</div>
+                <div class="stat-label">Absent Days</div>
+            </div>
+        </div>
+
+        <!-- Attendance Records -->
+        <div class="card">
+            <h2 class="card-title">Attendance Records (Last 90 Days)</h2>
+            
+            {% if records %}
+                <div style="overflow-x: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Check-In</th>
+                                <th>Check-Out</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                                <tr>
+                                    <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ record.check_in_time.strftime('%H:%M:%S') if record.check_in_time else '-' }}</td>
+                                    <td>{{ record.check_out_time.strftime('%H:%M:%S') if record.check_out_time else '-' }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ record.status.lower() }}">
+                                            {{ record.status.upper() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ record.notes or '-' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: var(--text-light);">No attendance records found</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

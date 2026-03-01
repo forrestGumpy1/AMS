@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Report - Attendance Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .filter-section {
+            background-color: var(--white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .percentage-bar {
+            display: inline-block;
+            width: 100px;
+            height: 20px;
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-left: 1rem;
+        }
+
+        .percentage-fill {
+            height: 100%;
+            background-color: var(--success-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .export-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-buttons a {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="#" class="navbar-brand">AMS - Admin Panel</a>
+                <ul class="navbar-menu">
+                    <li><strong>Admin: {{ current_user.username }}</strong></li>
+                    <li><a href="{{ url_for('logout') }}" class="logout-btn">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">Attendance Report</h1>
+            <p>Comprehensive attendance statistics</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <a href="{{ url_for('admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-group" style="flex: 0 0 auto;">
+                <label for="search">Search Employee</label>
+                <input type="text" id="search" placeholder="Search by name or ID" onkeyup="filterTable()" style="width: 200px;">
+            </div>
+            <div style="flex: 1 1 auto;"></div>
+            <button class="btn btn-primary" onclick="window.print()" style="margin-top: 0;">Print Report</button>
+            <a href="{{ url_for('admin_export_users') }}" class="btn btn-success" style="margin-top:0;">Export Users CSV</a>
+            <a href="{{ url_for('admin_export_attendance') }}" class="btn btn-success" style="margin-top:0;">Export Attendance CSV</a>
+        </div>
+
+        <!-- Attendance Report Table -->
+        <div class="card">
+            <h2 class="card-title">Employee Attendance Summary</h2>
+            
+            {% if report_data %}
+                <div style="overflow-x: auto;">
+                    <canvas id="attendanceChart" style="max-width: 100%; height: 300px; margin-bottom: 1rem;"></canvas>
+                    <table class="table" id="reportTable">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Employee ID</th>
+                                <th>Department</th>
+                                <th>Present Days</th>
+                                <th>Absent Days</th>
+                                <th>Attendance %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in report_data %}
+                                <tr>
+                                    <td>{{ item.user.username }}</td>
+                                    <td>{{ item.user.employee_id }}</td>
+                                    <td>{{ item.user.department }}</td>
+                                    <td><strong>{{ item.present }}</strong></td>
+                                    <td><strong>{{ item.absent }}</strong></td>
+                                    <td>
+                                        {% set total = item.present + item.absent %}
+                                        {% set percentage = (item.present / total * 100) if total > 0 else 0 %}
+                                        <div class="percentage-bar">
+                                            <div class="percentage-fill" style="width: {{ percentage }}%;">
+                                                {{ "%.0f"|format(percentage) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: var(--text-light);">No data available</p>
+            {% endif %}
+        </div>
+
+        <!-- Statistics Summary -->
+        <div class="grid grid-3" style="margin-top: 2rem;">
+            <div class="card text-center">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--secondary-color);">
+                    {{ report_data|length }}
+                </div>
+                <div style="color: var(--text-light);">Total Employees</div>
+            </div>
+            <div class="card text-center">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--success-color);">
+                    {% set total_present = report_data|map(attribute='present')|sum %}
+                    {{ total_present }}
+                </div>
+                <div style="color: var(--text-light);">Total Present Days</div>
+            </div>
+            <div class="card text-center">
+                <div style="font-size: 2rem; font-weight: bold; color: var(--danger-color);">
+                    {% set total_absent = report_data|map(attribute='absent')|sum %}
+                    {{ total_absent }}
+                </div>
+                <div style="color: var(--text-light);">Total Absent Days</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filterTable() {
+            const input = document.getElementById('search');
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById('reportTable');
+            const trs = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < trs.length; i++) {
+                const tds = trs[i].getElementsByTagName('td');
+                let found = false;
+                
+                for (let j = 0; j < tds.length - 1; j++) {
+                    if (tds[j].textContent.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                trs[i].style.display = found ? '' : 'none';
+            }
+        }
+        
+        // build chart after page loads
+        window.addEventListener('load', function() {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            const labels = [
+                {% for item in report_data %}
+                    "{{ item.user.username }}",
+                {% endfor %}
+            ];
+            const presentData = [
+                {% for item in report_data %}
+                    {{ item.present }},
+                {% endfor %}
+            ];
+            const absentData = [
+                {% for item in report_data %}
+                    {{ item.absent }},
+                {% endfor %}
+            ];
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Present',
+                            backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                            data: presentData
+                        },
+                        {
+                            label: 'Absent',
+                            backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                            data: absentData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+        });
+    </script>
+
+    <style>
+        @media print {
+            .navbar, .back-link, .filter-section, .btn {
+                display: none;
+            }
+            .page-header {
+                background: none;
+                color: var(--text-dark);
+            }
+        }
+    </style>
+</body>
+</html>

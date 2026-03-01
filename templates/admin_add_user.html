@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add User - Attendance Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .form-container {
+            max-width: 600px;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            text-align: center;
+            padding: 0.75rem;
+            background-color: #d4edda;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            text-align: center;
+            padding: 0.75rem;
+            background-color: #f8d7da;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="#" class="navbar-brand">AMS - Admin Panel</a>
+                <ul class="navbar-menu">
+                    <li><strong>Admin: {{ current_user.username }}</strong></li>
+                    <li><a href="{{ url_for('logout') }}" class="logout-btn">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">Add New User</h1>
+            <p>Create a new employee account</p>
+        </div>
+    </div>
+
+    <div class="container form-container">
+        <a href="{{ url_for('admin_users') }}" class="back-link">← Back to Users</a>
+
+        <div class="card">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="username">Username *</label>
+                    <input type="text" id="username" name="username" required placeholder="e.g., john.doe" min-length="3">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required placeholder="e.g., john@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password *</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter a strong password" min-length="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="employee_id">Employee ID *</label>
+                    <input type="text" id="employee_id" name="employee_id" required placeholder="e.g., EMP001">
+                </div>
+
+                <div class="form-group">
+                    <label for="department">Department *</label>
+                    <select id="department" name="department" required>
+                        <option value="">Select a department</option>
+                        <option value="IT">IT</option>
+                        <option value="HR">HR</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Operations">Operations</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">Create User</button>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-primary" style="flex: 1; text-align: center;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
