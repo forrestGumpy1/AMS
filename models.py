@@ -81,3 +81,16 @@ class Attendance(db.Model):
     
     def __repr__(self):
         return f'<Attendance {self.user_id} - {self.date}>'
+
+
+class AttendanceEvent(db.Model):
+    """Individual check-in/check-out event"""
+    __tablename__ = 'attendance_event'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    event_type = db.Column(db.String(10), nullable=False)  # 'in' or 'out'
+    notes = db.Column(db.Text, nullable=True)
+    
+    def __repr__(self):
+        return f'<Event {self.user_id} {self.event_type} @ {self.timestamp}>'

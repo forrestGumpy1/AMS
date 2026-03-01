@@ -13,6 +13,7 @@ A comprehensive Flask-based Attendance Management System with admin and user fun
   - Check-in/Check-out functionality
   - View personal attendance history
   - Track attendance records for last 30 days
+  - Upload or capture a profile photo (stored under `static/uploads` with feedback messages)
 
 - **Admin Features**
   - Manage employees (add, view, delete)
@@ -20,6 +21,7 @@ A comprehensive Flask-based Attendance Management System with admin and user fun
   - Track attendance for all employees
   - Generate attendance reports
   - Mark attendance for employees
+  - Generate simple payrolls by month (enter hourly rate, view payment per employee). Use the dropdown to limit the report to one user, and you may edit each row’s rate directly on the table and reapply to calculate individual pay. When you change month/user using the "Go" button any per‑user rates you’ve entered are preserved so the figures don’t reset.
   - Admin dashboard with overview
 
 ## Project Structure

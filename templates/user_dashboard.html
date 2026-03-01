@@ -117,9 +117,23 @@
     <div class="dashboard-header">
         <div class="container">
             <h1 class="dashboard-title">Dashboard</h1>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-info" role="alert">
+                        {% for msg in messages %}{{ msg }}<br>{% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
             <div class="user-info">
                 <p><strong>Employee ID:</strong> {{ current_user.employee_id }}</p>
                 <p><strong>Department:</strong> {{ current_user.department }}</p>
+                {% if current_user.photo %}
+                    <p><img src="{{ url_for('static', filename=current_user.photo) }}" alt="Photo" style="max-width:120px;border-radius:50%;"></p>
+                {% endif %}
+                <form action="{{ url_for('upload_photo') }}" method="post" enctype="multipart/form-data">
+                    <input type="file" name="photo" accept="image/*" capture="user" />
+                    <button type="submit" class="btn btn-secondary btn-sm mt-2">Upload Photo</button>
+                </form>
             </div>
         </div>
     </div>
@@ -153,10 +167,10 @@
             {% endif %}
 
             <div class="attendance-buttons">
-                <button id="check-in-btn" class="btn btn-success" onclick="checkIn()" {% if attendance_today and attendance_today.check_in_time %}disabled{% endif %}>
+                <button id="check-in-btn" class="btn btn-success" onclick="checkIn()">
                     Check In
                 </button>
-                <button id="check-out-btn" class="btn btn-warning" onclick="checkOut()" {% if not attendance_today or (attendance_today and attendance_today.check_out_time) %}disabled{% endif %}>
+                <button id="check-out-btn" class="btn btn-warning" onclick="checkOut()">
                     Check Out
                 </button>
             </div>
@@ -165,6 +179,35 @@
                 <div class="spinner"></div>
                 <p>Processing...</p>
             </div>
+        </div>
+
+        <!-- Attendance Events -->
+        <div class="card">
+            <h2 class="card-title">Attendance Events (Last 30 Days)</h2>
+            {% if events %}
+                <div style="overflow-x: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Type</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ev in events %}
+                                <tr>
+                                    <td>{{ ev.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ ev.event_type.upper() }}</td>
+                                    <td>{{ ev.notes or '-' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="text-align:center;color:var(--text-light);">No events recorded</p>
+            {% endif %}
         </div>
 
         <!-- Attendance History Section -->

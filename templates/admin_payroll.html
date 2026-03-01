@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll - Attendance Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .page-title { font-size: 2rem; margin-bottom: 0.5rem; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: var(--secondary-color); text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .filter-section { margin-bottom: 2rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="#" class="navbar-brand">AMS - Admin Panel</a>
+                <ul class="navbar-menu">
+                    <li><strong>Admin: {{ current_user.username }}</strong></li>
+                    <li><a href="{{ url_for('logout') }}" class="logout-btn">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">Payroll</h1>
+            <p>Summary for {{ period }}{% if selected_uid %}{% set sel_user = users|selectattr('id','equalto',selected_uid)|list %} - {% if sel_user %}{{ sel_user[0].username }}{% endif %}{% endif %}</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <a href="{{ url_for('admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+        <div class="filter-section">
+            <form method="get" action="{{ url_for('admin_payroll') }}" id="filter-form">
+                <label for="month">Month:</label>
+                <input type="month" name="month" id="month" value="{{ period }}">
+                <label for="user_id">Employee (optional):</label>
+                <select name="user_id" id="user_id">
+                    <option value="">-- All --</option>
+                    {% for u in users %}
+                        <option value="{{ u.id }}" {% if selected_uid and selected_uid == u.id %}selected{% endif %}>{{ u.username }} ({{ u.employee_id }})</option>
+                    {% endfor %}
+                </select>
+                <label for="rate">Rate (per hr):</label>
+                <input type="number" step="0.01" name="rate" id="rate" value="{{ rate|default(0, true) }}" style="width:100px;">
+                <button type="submit" class="btn btn-primary">Go</button>
+            </form>
+            <script>
+                // ensure per-user rate inputs are included when the filter form is submitted
+                document.getElementById('filter-form').addEventListener('submit', function(e) {
+                    const tableRates = document.querySelectorAll('input[name^="rate_"]');
+                    tableRates.forEach(inp => {
+                        let hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = inp.name;
+                        hidden.value = inp.value;
+                        this.appendChild(hidden);
+                    });
+                });
+            </script>
+        </div>
+
+        <div class="card">
+            <form method="post" action="{{ url_for('admin_payroll') }}">
+                <input type="hidden" name="month" value="{{ period }}">
+                <input type="hidden" name="user_id" value="{{ selected_uid or '' }}">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Employee ID</th>
+                            <th>Total Hours</th>
+                            <th>Rate</th>
+                            <th>Payment</th>
+                            <th>Full Days</th>
+                            <th>Half Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in payroll_data %}
+                            <tr>
+                                <td>{{ item.user.username }}</td>
+                                <td>{{ item.user.employee_id }}</td>
+                                <td>{{ "%.2f"|format(item.hours) }}</td>
+                                <td>
+                                    <input type="number" step="0.01" name="rate_{{ item.user.id }}"
+                                           value="{{ "%.2f"|format(item.rate|default(0, true)) }}" style="width:80px;">
+                                </td>
+                                <td>{{ "%.2f"|format(item.payment) }}</td>
+                                <td>{{ item.full_days }}</td>
+                                <td>{{ item.half_days }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="submit" class="btn btn-primary">Apply Rates</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
